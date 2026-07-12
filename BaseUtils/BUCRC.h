@@ -4,6 +4,13 @@
 #include <cctype>
 #include <cstdint>
 #include <string>
+#include <unordered_map>
+
+class BUCRCTable
+{
+public:
+    std::unordered_map<uint32_t, std::string> mCRCTable;
+};
 
 class BUCRC
 {
