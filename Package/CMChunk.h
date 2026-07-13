@@ -14,9 +14,13 @@ public:
     uint16_t version;
     uint64_t length;
 
+    uint8_t lengthFieldSize = 8;
+
     std::vector<uint8_t> data; // Data of the chunk (Only applied if child chunk.)
 
     std::vector<CMChunk> children;
+
+    bool isLittleEndian = false;
 
     CMChunk() = default;
 
@@ -77,6 +81,16 @@ public:
         return hasChildren != 0;
     }
 
+    void SetData(const std::vector<uint8_t>& newData)
+    {
+        if (hasChildren)
+        {
+            throw std::runtime_error("Cannot set data for a chunk that has children");
+        }
+        data = newData;
+        length = static_cast<uint64_t>(data.size());
+    }
+
     static void ByteSwap(void* data, size_t size)
     {
         uint8_t* bytes = reinterpret_cast<uint8_t*>(data);
@@ -87,14 +101,83 @@ public:
         }
     }
 
+    void Write(std::ostream& stream, bool isLittleEndian) const
+    {
+        uint32_t outID = id;
+        uint16_t outHasChildren = hasChildren;
+        uint16_t outVersion = version;
+        uint64_t outLength = length;
+
+        if (!isLittleEndian)
+        {
+            ByteSwap(&outID, sizeof(outID));
+            ByteSwap(&outVersion, sizeof(outVersion));
+            ByteSwap(&outHasChildren, sizeof(outHasChildren));
+            ByteSwap(&outLength, sizeof(outLength));
+        }
+
+        stream.write(reinterpret_cast<const char*>(&outID), sizeof(outID));
+        stream.write(reinterpret_cast<const char*>(&outVersion), sizeof(outVersion));
+        stream.write(reinterpret_cast<const char*>(&outHasChildren), sizeof(outHasChildren));
+        stream.write(reinterpret_cast<const char*>(&outLength), sizeof(outLength));
+
+        if (hasChildren)
+        {
+            for (const auto& child : children)
+            {
+                child.Write(stream, isLittleEndian);
+            }
+        }
+        else
+        {
+            if (!data.empty())
+            {
+                stream.write(
+                    reinterpret_cast<const char*>(data.data()),
+                    data.size()
+                );
+            }
+        }
+
+        if (!stream)
+            throw std::runtime_error("Failed writing chunk");
+    }
+
     static CMChunk Read(std::istream& stream, bool isLittleEndian)
     {
         CMChunk chunk;
+        chunk.isLittleEndian = isLittleEndian;
 
-        stream.read(reinterpret_cast<char*>(&chunk.id), sizeof(chunk.id));
+        uint8_t idBytes[sizeof(chunk.id)];
+        stream.read(reinterpret_cast<char*>(idBytes), sizeof(idBytes));
+        if (!stream)
+            throw std::runtime_error("Failed to read chunk header");
+
+        bool useShortLength = (idBytes[0] != 0x80);
+        chunk.lengthFieldSize = useShortLength ? 4 : 8;
+
+        std::memcpy(&chunk.id, idBytes, sizeof(chunk.id));
         stream.read(reinterpret_cast<char*>(&chunk.version), sizeof(chunk.version));
         stream.read(reinterpret_cast<char*>(&chunk.hasChildren), sizeof(chunk.hasChildren));
-        stream.read(reinterpret_cast<char*>(&chunk.length), sizeof(chunk.length));
+        
+        if (useShortLength)
+        {
+            uint32_t length32 = 0;
+            stream.read(reinterpret_cast<char*>(&length32), sizeof(length32));
+            if (!stream)
+                throw std::runtime_error("Failed to read chunk length");
+            if (!isLittleEndian)
+                ByteSwap(&length32, sizeof(length32));
+            chunk.length = static_cast<uint64_t>(length32);
+        }
+        else
+        {
+            stream.read(reinterpret_cast<char*>(&chunk.length), sizeof(chunk.length));
+            if (!stream)
+                throw std::runtime_error("Failed to read chunk length");
+            if (!isLittleEndian)
+                ByteSwap(&chunk.length, sizeof(chunk.length));
+        }
 
         if (!stream)
             throw std::runtime_error("Failed to read chunk header");
@@ -104,7 +187,6 @@ public:
             ByteSwap(&chunk.id, sizeof(chunk.id));
             ByteSwap(&chunk.version, sizeof(chunk.version));
             ByteSwap(&chunk.hasChildren, sizeof(chunk.hasChildren));
-            ByteSwap(&chunk.length, sizeof(chunk.length));
         }
 
         if (chunk.hasChildren)
@@ -119,7 +201,7 @@ public:
                     sizeof(child.id) +
                     sizeof(child.hasChildren) +
                     sizeof(child.version) +
-                    sizeof(child.length) +
+                    child.lengthFieldSize +
                     child.length;
 
                 bytesRead += childSize;

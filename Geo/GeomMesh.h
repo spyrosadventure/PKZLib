@@ -18,20 +18,26 @@ public:
     };
 
     uint32_t uiMaterialCount;
-    uint8_t* pui8MaterialIdxList;
-    uint32_t* pVertexBuffer;
+    uint8_t pui8MaterialIdxList;
+    uint32_t pVertexBuffer;
     uint32_t uiVertexStride;
     int32_t iVertexFormat;
     uint32_t uiVertexCount;
-    uint32_t* pDisplayList;
+    uint32_t pDisplayList;
     uint32_t uiDisplayListSize;
     uint32_t uiFlags;
     uint32_t uiBonePaletteSize;
-    uint32_t* ppMorphTargets;
-    uint32_t* psBMeshData;
-    uint32_t* psBMeshDisplayList;
+    uint32_t ppMorphTargets;
+    uint32_t psBMeshData;
+    uint32_t psBMeshDisplayList;
     uint32_t uiConstantDiffuse;
     std::vector<uint32_t> uiBonePalette;
+
+    RZGeomPrim(const CMChunk& chunk)
+        : CMChunk(chunk)
+    {
+        Parse();
+    }
 
     bool HasNormals() const
     {
@@ -93,5 +99,74 @@ public:
     int32_t GetVertexFormat() const
     {
         return iVertexFormat;
+    }
+
+private:
+    template<typename T>
+    T Read(size_t& offset)
+    {
+        if (offset + sizeof(T) > data.size())
+        {
+            std::cout
+                << "Read failed\n"
+                << "Offset: 0x" << std::hex << offset << "\n"
+                << "Need: 0x" << sizeof(T) << " bytes\n"
+                << "Data size: 0x" << data.size() << "\n";
+
+            throw std::runtime_error("RZGeomPrim data out of bounds");
+        }
+
+        T value;
+        std::memcpy(&value, data.data() + offset, sizeof(T));
+        offset += sizeof(T);
+
+        // File is big-endian, system is little-endian
+        if (isLittleEndian == false)
+        {
+            ByteSwap(&value, sizeof(T));
+        }
+
+        return value;
+    }
+
+    void Parse()
+    {
+        size_t offset = 0;
+
+        uiMaterialCount = Read<uint32_t>(offset);
+
+        pVertexBuffer = Read<uint32_t>(offset);
+
+        uiVertexStride = Read<uint32_t>(offset);
+
+        iVertexFormat = Read<int32_t>(offset);
+
+        uiVertexCount = Read<uint32_t>(offset);
+
+        pDisplayList = Read<uint32_t>(offset);
+
+        uiDisplayListSize = Read<uint32_t>(offset);
+
+        uiFlags = Read<uint32_t>(offset);
+
+        uiBonePaletteSize = Read<uint32_t>(offset);
+
+        ppMorphTargets = Read<uint32_t>(offset);
+
+        psBMeshData = Read<uint32_t>(offset);
+
+        psBMeshDisplayList = Read<uint32_t>(offset);
+
+        uiConstantDiffuse = Read<uint32_t>(offset);
+
+        if (uiBonePaletteSize != 0)
+        {
+            uiBonePalette.reserve(uiBonePaletteSize);
+
+            for (uint32_t i = 0; i < uiBonePaletteSize; i++)
+            {
+                uiBonePalette.push_back(Read<uint32_t>(offset));
+            }
+        }
     }
 };

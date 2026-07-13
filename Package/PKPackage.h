@@ -38,4 +38,19 @@ public:
 
         file.close();
     }
+
+    void WriteToFile(const std::string& filePath)
+    {
+        std::ofstream file(filePath, std::ios::binary);
+
+        if (!file.is_open())
+            throw std::runtime_error("Failed to open package file for writing: " + filePath);
+
+        for (const auto& chunk : rootChunks)
+        {
+            chunk.Write(file, isLittleEndian);
+        }
+
+        file.close();
+    }
 };
