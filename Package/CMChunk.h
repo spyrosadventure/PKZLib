@@ -16,6 +16,8 @@ public:
 
     uint8_t lengthFieldSize = 8;
 
+    uint64_t offset = 0;
+
     std::vector<uint8_t> data; // Data of the chunk (Only applied if child chunk.)
 
     std::vector<CMChunk> children;
@@ -147,6 +149,11 @@ public:
     {
         CMChunk chunk;
         chunk.isLittleEndian = isLittleEndian;
+
+        std::streampos startPos = stream.tellg();
+        if (startPos == std::streampos(-1))
+            throw std::runtime_error("Failed to get stream position for chunk offset");
+        chunk.offset = static_cast<uint64_t>(startPos);
 
         uint8_t idBytes[sizeof(chunk.id)];
         stream.read(reinterpret_cast<char*>(idBytes), sizeof(idBytes));

@@ -28,7 +28,7 @@
     X(Gen_ResIDToNameTable, 0x00000014) \
     X(Gen_OcclusionModel, 0x00000015) \
     X(Gen_BinaryDataLibrary, 0x00000016) \
-    X(Gen_ReflectionSourceLibrary_REMOVED, 0x00000017) \
+    X(Gen_ReflectionSourceLibrary, 0x00000017) \
     X(Gen_FoliageLibrary, 0x00000018) \
     X(Gen_Languages, 0x00000019) \
     X(Gen_ExportContext, 0x0000001A) \
@@ -44,8 +44,8 @@
     X(Gen_MotionTrailLibrary, 0x00000024) \
     X(Gen_LODDistances, 0x00000025) \
     X(Gen_PostLoadData, 0x00000026) \
-    X(Gen_BSplineLibrary_REMOVED, 0x00000027) \
-    X(Gen_ZoneLibrary_REMOVED, 0x00000028) \
+    X(Gen_BSplineLibrary, 0x00000027) \
+    X(Gen_ZoneLibrary, 0x00000028) \
     X(Gen_Constants, 0x00000029) \
     X(Gen_ResTable, 0x0000002A) \
     X(Gen_BillboardLibrary, 0x0000002B) \
@@ -60,7 +60,7 @@
     X(Gen_AnimCueLibrary, 0x00000034) \
     X(Gen_AnimTreeLibrary, 0x00000035) \
     X(Gen_TextStyleLibrary, 0x00000036) \
-    X(Gen_AnimationGraphLibrary_REMOVED, 0x00000037) \
+    X(Gen_AnimationGraphLibrary, 0x00000037) \
     X(Gen_PackagesInfo, 0x00000038) \
     X(Gen_CurveLibrary, 0x00000039) \
     X(Gen_ResourcesListLibrary, 0x0000003A) \
@@ -97,7 +97,7 @@
     X(RenderOctree_MaterialList, 0x000000CA) \
     X(RenderOctree_PrimIdx, 0x000000CB) \
     X(RenderOctree_Prims, 0x000000CC) \
-    X(RenderOctree_TransCenters_REMOVED, 0x000000CD) \
+    X(RenderOctree_TransCenters, 0x000000CD) \
     X(RenderOctree_Obj, 0x000000CE) \
     X(RenderOctree_InstanceIdx, 0x000000CF) \
     X(RenderOctree_Instances, 0x000000D0) \
